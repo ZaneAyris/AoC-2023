@@ -1,81 +1,62 @@
-def mapX(inputList, nextList):
-    outputSet = set()
-
-    allInputLists = inputList.copy()
-
-    while len(allInputLists) != 0:
-        
-        selection = allInputLists[0]
-
-        inpStart, inpRange = [n for n in selection]
-        inpEnd = inpStart + inpRange -1
-        completed = False
-        # (Start, Range)
-        
-        for numbers in nextList:
-            destStart, sourStart, rangeLen = [int(s) for s in numbers.split()]
-            sourEnd = sourStart + rangeLen - 1
-            destEnd = destStart + rangeLen - 1
-            if inpStart >= sourStart and  inpEnd <= sourEnd:
-                startRange = inpStart - sourStart +1
-                endRange = inpEnd - sourStart +1
-                outputForm = (destStart + startRange -1, endRange)
-                outputSet.add(outputForm)
-                completed = True
-                break
-
-            elif inpStart < sourStart <= inpEnd <= sourEnd:
-                # First add matching
-                connectedEndRange = inpEnd - sourStart + 1
-                connectedOutputForm = (destStart, connectedEndRange)
-                outputSet.add(connectedOutputForm)
-                # leave what has not been connected
-                inpEnd = sourStart -1
-
-            elif sourStart <= inpStart <=  sourEnd < inpEnd:
-                connectedRange = sourEnd - inpStart + 1
-                connectedOutputForm = (destStart, connectedRange)
-                outputSet.add(connectedOutputForm)
-                inpStart = sourEnd + 1
-
-            elif inpStart < sourStart < sourEnd < inpEnd:
-                allInputLists.append((sourEnd, inpEnd + 1))
-                # this is whats left allInputLists.append((inpStart, sourStart +1))
-                connectedOutputForm = (destStart, rangeLen)
-                outputSet.add(connectedOutputForm)
-                inpEnd = sourStart +1
-                
-            else:
-                pass
-
-        if completed == False:
-            outputSet.add((inpStart, inpEnd - inpStart + 1))
-                    
-        allInputLists = allInputLists[1:]
-    return list(outputSet)
-
-
 file = open("input.txt","r")
 sections = file.read().split("\n\n")
 
-
 seeds = [int(x) for x in sections[0].split(":")[1].strip().split(" ")]
-soil, fert, water, light, temp, humid, location = [section.split(":")[1].strip().split("\n") for section in sections[1:]]
+maps = [[int(y) for y in section.split(":")[1].strip().split()] for section in sections[1:]]
 
+maps = [[tuple(m[i:i + 3]) for i in range(0, len(m), 3)] for m in maps]
 
-seedRanges = []
+minLocation = None
+
+bagOfSeeds = []
 
 for i in range(0,len(seeds),2):
-    seedRanges.append((seeds[i], seeds[i+1]))
+    bagOfSeeds.append((seeds[i], seeds[i] + seeds[i+1] -1))
 
-seedToSoil = mapX(seedRanges, soil)
-soilToFert = mapX(seedToSoil, fert)
-fertToWater = mapX(soilToFert, water)
-waterToLight = mapX(fertToWater, light)
-lightToTemp = mapX(waterToLight, temp)
-tempToHumid = mapX(lightToTemp, humid)
-humidToLocation = mapX(tempToHumid, location)
-sorted_list = sorted(humidToLocation, key=lambda x: x[0])
 
-print(sorted_list)
-
+for m in maps:
+    nextBag = []
+    while bagOfSeeds:
+        seedStart, seedEnd = bagOfSeeds.pop()
+        overlap = False
+        for destStart, srcStart, rangeLen in m:
+            destEnd = destStart + rangeLen -1
+            srcEnd = srcStart + rangeLen -1
+            if seedStart > srcEnd or srcStart > seedEnd: # No Overlap
+                continue
+                
+            
+            if seedStart < srcStart and seedEnd <= srcEnd: # Left side only Overlap
+                tempRange = seedEnd - srcStart
+                bagOfSeeds.append((seedStart, srcStart -1))
+                nextBag.append((destStart, destStart + tempRange))
+                overlap = True
+                break
+            
+            if seedStart >= srcStart and seedEnd > srcEnd: # Right side only Overlap
+                tempRange = seedStart - srcStart
+                nextBag.append((destStart + tempRange, destEnd))
+                bagOfSeeds.append((srcEnd+1, seedEnd))
+                overlap = True
+                break
+            
+            if seedStart < srcStart and seedEnd > srcEnd: # Seed larger than Src
+                bagOfSeeds.append((seedStart, srcStart -1))
+                bagOfSeeds.append((srcEnd +1, seedEnd))
+                nextBag.append((destStart, destEnd))
+                overlap = True
+                break
+                
+            if seedStart >= srcStart and seedEnd <= srcEnd: # Complete Overlap
+                tempStartRange = seedStart - srcStart
+                tempEndRange = seedEnd - srcStart
+                nextBag.append((destStart + tempStartRange, destStart + tempEndRange))
+                overlap = True
+                break
+        if overlap == False:
+            nextBag.append((seedStart, seedEnd))
+            
+    bagOfSeeds = nextBag
+            
+minLocation = min(bagOfSeeds, key=lambda t:t)
+print(minLocation)
