@@ -1,6 +1,6 @@
 file = open('input.txt','r')
 hand = [tuple(x.split()) for x in [y for y in file.readlines()]]
-dictionary = {1: [], 2:[], 2.5:[], 3:[], 4:[], 5:[]}
+dictionary = {1: [], 2:[], 2.5:[], 3:[], 3.5:[], 4:[], 5:[]}
 for game in hand:
     dictionary[len(set(game[0]))].append(game)
 
@@ -18,6 +18,20 @@ for game in toMove:
     dictionary[2].remove(game)
     dictionary[2.5].append(game)
 
+toMove = []
+
+for game in dictionary[3]:
+    gameValues = set(game[0])
+    threeOfAKind = False
+    for cardType in gameValues:
+        if game[0].count(cardType) == 3:
+            threeOfAKind = True
+    if threeOfAKind == False:
+        toMove.append(game)
+
+for game in toMove:
+    dictionary[3].remove(game)
+    dictionary[3.5].append(game)
 
 
 for gameType in dictionary.keys():
@@ -29,3 +43,5 @@ sumWin = 0
 for game in allGames:
     sumWin += int(game[1]) * (allGames.index(game) + 1)
 print(sumWin)
+
+print(allGames)
