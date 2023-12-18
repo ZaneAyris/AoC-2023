@@ -38,10 +38,9 @@ for gameType in dictionary.keys():
     dictionary[gameType] = sorted(dictionary[gameType],  key=lambda game: [(Order.get(card), Order.get((game[0][1:])[0])) for card in game[0]])
     
 allGames = [game for gameType in dictionary.values()  for game in gameType]
-
+allGames.reverse()
 sumWin = 0
 for game in allGames:
     sumWin += int(game[1]) * (allGames.index(game) + 1)
 print(sumWin)
 
-print(allGames)
